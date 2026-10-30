@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사막 스탑워치</title>
+<style>
+  :root {
+    --bg: #fbf3e6;
+    --surface: #fffaf2;
+    --text: #3b2414;
+    --muted: #9a7b5f;
+    --border: #ecdcc4;
+    --sky-top: #8fd0ea;
+    --sky-bottom: #fde7bf;
+    --orb: #fff4c7;
+    --orb-glow: rgba(255, 220, 130, .55);
+    --far: #e0a877;
+    --far-shade: #cf9163;
+    --mid: #ebbb7c;
+    --oasis: #4fb3c4;
+    --grass: #6f9a3c;
+    --palm-leaf: #4f7f2c;
+    --palm-trunk: #8a5a32;
+    --near: #f4cf92;
+    --ripple: #e2b170;
+    --rock: #c99a66;
+    --camel: #b97a45;
+    --camel-far: #9a6236;
+    --camel-dark: #6b4024;
+    --shadow: rgba(120, 70, 30, .22);
+    --stars: 0;
+    --accent: #d97706;
+    --accent-text: #ffffff;
+    --stop: #b4432a;
+    --best: #4d7c0f;
+    --worst: #b4432a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15111d;
+      --surface: #1e1828;
+      --text: #f3e6d4;
+      --muted: #a8957f;
+      --border: #2f2639;
+      --sky-top: #0d1430;
+      --sky-bottom: #4a3355;
+      --orb: #f4f0dc;
+      --orb-glow: rgba(240, 235, 210, .25);
+      --far: #3f2f4a;
+      --far-shade: #35273f;
+      --mid: #5a4157;
+      --oasis: #2f6d86;
+      --grass: #2f4a35;
+      --palm-leaf: #27402d;
+      --palm-trunk: #3a2a2a;
+      --near: #775a5b;
+      --ripple: #66494d;
+      --rock: #5a4248;
+      --camel: #3a2730;
+      --camel-far: #2a1c24;
+      --camel-dark: #1d1319;
+      --shadow: rgba(0, 0, 0, .35);
+      --stars: 1;
+      --accent: #f59e0b;
+      --accent-text: #1c1206;
+      --stop: #e0674b;
+      --best: #a3d063;
+      --worst: #f08a6e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 48px;
+  }
+  main { width: 100%; max-width: 760px; }
+
+  /* ---------- 사막 장면 ---------- */
+  .scene {
+    position: relative;
+    height: 300px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: linear-gradient(var(--sky-top), var(--sky-bottom) 75%);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+  .stars { position: absolute; inset: 0; opacity: var(--stars); }
+  .stars i {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: #fff; animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle { 50% { opacity: .2; } }
+  .orb {
+    position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px;
+    border-radius: 50%; background: var(--orb);
+    box-shadow: 0 0 0 10px var(--orb-glow), 0 0 50px 20px var(--orb-glow);
+  }
+  .layer { position: absolute; inset: 0; }
+  .track {
+    display: flex; width: 3200px; height: 300px;
+    animation: scroll linear infinite;
+    animation-play-state: paused;
+  }
+  .track svg { flex: none; width: 1600px; height: 300px; }
+  .far  .track { animation-duration: 200s; }
+  .mid  .track { animation-duration: 80s; }
+  .near .track { animation-duration: 25s; }
+  @keyframes scroll { to { transform: translateX(-1600px); } }
+
+  .camel {
+    position: absolute; left: 50%; bottom: 38px;
+    width: 200px; height: 170px; margin-left: -110px;
+  }
+  .camel .body { animation: bob .6s ease-in-out infinite; }
+  .camel .head { animation: nod 1.2s ease-in-out infinite; transform-origin: 140px 88px; }
+  .camel .leg { animation: swing 1.2s ease-in-out infinite; }
+  .camel .leg.b { animation-delay: -.6s; }
+  .camel .tail { animation: wag 1.2s ease-in-out infinite; transform-origin: 42px 88px; }
+  .camel .body, .camel .head, .camel .leg, .camel .tail { animation-play-state: paused; }
+  @keyframes bob   { 50% { transform: translateY(-3px); } }
+  @keyframes nod   { 50% { transform: rotate(-4deg); } }
+  @keyframes swing { 0%, 100% { transform: rotate(16deg); } 50% { transform: rotate(-16deg); } }
+  @keyframes wag   { 50% { transform: rotate(10deg); } }
+
+  .scene.running .track,
+  .scene.running .camel * { animation-play-state: running; }
+
+  .status {
+    position: absolute; top: 14px; left: 14px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, .55); color: #3b2414;
+    font-size: 13px; font-weight: 600;
+    backdrop-filter: blur(6px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .status { background: rgba(20, 14, 28, .55); color: #f3e6d4; }
+  }
+
+  /* ---------- 시간 & 버튼 ---------- */
+  .display {
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(52px, 15vw, 88px);
+    font-weight: 200;
+    text-align: center;
+    letter-spacing: -0.02em;
+    margin: 28px 0 8px;
+  }
+  .display .ms { color: var(--muted); }
+  .caption { text-align: center; color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+  .controls { display: flex; gap: 12px; max-width: 420px; margin: 0 auto; }
+  button {
+    flex: 1; height: 56px; border-radius: 28px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
+    transition: transform .08s, opacity .15s, background .2s;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: .4; cursor: default; transform: none; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.primary.running { background: var(--stop); border-color: var(--stop); color: #fff; }
+  .hint { text-align: center; color: var(--muted); font-size: 13px; margin: 16px 0 24px; }
+
+  ol { list-style: none; margin: 0 auto; padding: 0; max-width: 420px; border-top: 1px solid var(--border); }
+  li {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 16px;
+    padding: 12px 4px; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  li .total { color: var(--muted); min-width: 92px; text-align: right; }
+  li .split { min-width: 92px; text-align: right; }
+  li.best .split { color: var(--best); }
+  li.worst .split { color: var(--worst); }
+</style>
+</head>
+<body>
+
+<!-- 반복되는 풍경 조각: 1600px 한 장을 두 번 이어 붙여 끊김 없이 흘러가게 한다 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="palm" viewBox="0 0 64 100">
+      <path d="M32,100 C34,72 28,44 34,18" style="fill:none;stroke:var(--palm-trunk);stroke-width:5;stroke-linecap:round"/>
+      <g style="fill:var(--palm-leaf)">
+        <path d="M34,18 C20,8 8,12 2,26 C12,16 22,16 34,18Z"/>
+        <path d="M34,18 C48,6 58,12 63,24 C52,16 44,16 34,18Z"/>
+        <path d="M34,18 C30,4 20,0 10,3 C22,6 28,10 34,18Z"/>
+        <path d="M34,18 C40,4 50,2 58,7 C46,8 40,12 34,18Z"/>
+        <path d="M34,18 C24,22 16,32 13,44 C22,32 28,26 34,18Z"/>
+        <path d="M34,18 C44,22 52,30 55,42 C46,32 40,26 34,18Z"/>
+      </g>
+    </symbol>
+
+    <symbol id="far" viewBox="0 0 1600 300">
+      <path style="fill:var(--far)" d="M0,190 C60,170 90,120 140,112 C190,106 210,150 260,150 C320,150 340,86 400,84 C460,82 480,150 560,160
+        C640,170 680,120 740,118 C800,116 820,170 900,168 C980,166 1000,96 1070,92 C1140,88 1160,158 1240,162
+        C1320,166 1350,124 1410,124 C1470,124 1500,180 1600,190 L1600,300 L0,300Z"/>
+      <path style="fill:var(--far-shade)" d="M400,84 C430,84 450,120 470,150 C450,160 420,160 400,158 C410,130 405,100 400,84Z
+        M1070,92 C1100,92 1120,130 1140,160 C1120,166 1090,166 1070,164 C1080,136 1076,108 1070,92Z"/>
+    </symbol>
+
+    <symbol id="mid" viewBox="0 0 1600 300">
+      <path style="fill:var(--mid)" d="M0,215 C200,185 350,190 500,212 C640,232 720,204 820,204 C920,204 960,226 1060,220
+        C1240,208 1400,188 1600,215 L1600,300 L0,300Z"/>
+      <!-- 오아시스 -->
+      <ellipse cx="822" cy="212" rx="96" ry="9" style="fill:var(--grass)"/>
+      <ellipse cx="822" cy="212" rx="74" ry="6" style="fill:var(--oasis)"/>
+      <ellipse cx="800" cy="211" rx="22" ry="1.5" style="fill:#fff;opacity:.35"/>
+      <use href="#palm" x="728" y="128" width="58" height="90"/>
+      <use href="#palm" x="764" y="150" width="40" height="64"/>
+      <use href="#palm" x="868" y="118" width="64" height="100"/>
+      <use href="#palm" x="908" y="156" width="36" height="58"/>
+      <!-- 멀리 있는 작은 피라미드 -->
+      <path style="fill:var(--far-shade)" d="M240,196 L276,150 L312,196Z"/>
+      <path style="fill:var(--far)" d="M276,150 L312,196 L292,197Z"/>
+    </symbol>
+
+    <symbol id="near" viewBox="0 0 1600 300">
+      <path style="fill:var(--near)" d="M0,252 C300,240 500,260 800,250 C1100,240 1300,258 1600,252 L1600,300 L0,300Z"/>
+      <g style="fill:none;stroke:var(--ripple);stroke-width:2;stroke-linecap:round">
+        <path d="M60,272 q30,-6 60,0"/><path d="M340,284 q40,-7 80,0"/><path d="M610,268 q24,-5 48,0"/>
+        <path d="M900,280 q36,-6 72,0"/><path d="M1180,270 q28,-5 56,0"/><path d="M1420,286 q40,-7 80,0"/>
+        <path d="M480,292 q20,-4 40,0"/><path d="M1060,294 q24,-4 48,0"/>
+      </g>
+      <g style="fill:var(--rock)">
+        <ellipse cx="210" cy="258" rx="12" ry="6"/><ellipse cx="224" cy="260" rx="6" ry="3"/>
+        <ellipse cx="1010" cy="256" rx="9" ry="5"/>
+        <path d="M1320,256 c0,-14 4,-22 6,-22 c2,0 3,8 3,14 c2,-2 5,-4 6,-2 c1,3 -2,8 -6,10 l0,2Z
+                 M1320,256 c0,-6 -3,-9 -5,-8 c-2,1 0,6 3,8Z" style="fill:var(--grass)"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<main>
+  <div class="scene" id="scene">
+    <div class="stars" id="stars"></div>
+    <div class="orb" id="orb"></div>
+
+    <div class="layer far"><div class="track">
+      <svg viewBox="0 0 1600 300"><use href="#far"/></svg><svg viewBox="0 0 1600 300"><use href="#far"/></svg>
+    </div></div>
+    <div class="layer mid"><div class="track">
+      <svg viewBox="0 0 1600 300"><use href="#mid"/></svg><svg viewBox="0 0 1600 300"><use href="#mid"/></svg>
+    </div></div>
+    <div class="layer near"><div class="track">
+      <svg viewBox="0 0 1600 300"><use href="#near"/></svg><svg viewBox="0 0 1600 300"><use href="#near"/></svg>
+    </div></div>
+
+    <!-- 낙타: 같은 쪽 다리가 함께 움직이는 측대보(pacing) 걸음 -->
+    <svg class="camel" viewBox="0 0 200 170" aria-hidden="true">
+      <ellipse cx="96" cy="163" rx="62" ry="5" style="fill:var(--shadow)"/>
+      <g style="stroke-linecap:round;fill:none">
+        <g class="leg b" style="transform-origin:76px 104px"><path d="M76,104 L79,132 L76,158" style="stroke:var(--camel-far);stroke-width:8"/></g>
+        <g class="leg a" style="transform-origin:122px 104px"><path d="M122,104 L125,132 L122,158" style="stroke:var(--camel-far);stroke-width:8"/></g>
+      </g>
+      <g class="body">
+        <path class="tail" d="M44,90 C36,96 34,106 36,116" style="fill:none;stroke:var(--camel-dark);stroke-width:3;stroke-linecap:round"/>
+        <!-- 몸통과 쌍봉 -->
+        <path style="fill:var(--camel)" d="M40,96 C38,78 52,70 64,71 C68,44 92,40 98,66 C104,42 128,42 132,70
+          C144,72 152,80 150,94 C148,110 132,116 96,116 C60,116 42,110 40,96Z"/>
+        <path style="fill:var(--camel-dark);opacity:.18" d="M64,71 C68,44 92,40 98,66 C92,54 74,54 64,71Z M98,66 C104,42 128,42 132,70 C126,56 108,54 98,66Z"/>
+        <g class="head">
+          <path style="fill:var(--camel)" d="M136,82 C150,80 156,70 158,52 C158,42 164,36 172,36 C182,36 192,42 194,48
+            C195,52 192,55 186,55 L176,56 C172,72 166,94 148,104Z"/>
+          <path style="fill:var(--camel-dark)" d="M166,36 l-2,-6 l5,4Z"/>
+          <circle cx="176" cy="44" r="1.8" style="fill:var(--camel-dark)"/>
+          <path d="M190,50 l3,0" style="stroke:var(--camel-dark);stroke-width:1.5;stroke-linecap:round"/>
+        </g>
+      </g>
+      <g style="stroke-linecap:round;fill:none">
+        <g class="leg a" style="transform-origin:64px 104px"><path d="M64,104 L67,132 L64,158" style="stroke:var(--camel);stroke-width:9"/></g>
+        <g class="leg b" style="transform-origin:134px 104px"><path d="M134,104 L137,132 L134,158" style="stroke:var(--camel);stroke-width:9"/></g>
+      </g>
+    </svg>
+
+    <div class="status" id="status">낙타가 쉬는 중</div>
+  </div>
+
+  <div class="display" id="display">00:00<span class="ms">.00</span></div>
+  <p class="caption">해(달)는 1분마다 하늘을 한 바퀴 건너갑니다</p>
+  <div class="controls">
+    <button id="lapBtn" disabled>랩</button>
+    <button id="startBtn" class="primary">출발</button>
+  </div>
+  <p class="hint">Space 출발/멈춤 · L 랩 · R 초기화</p>
+  <ol id="laps"></ol>
+</main>
+
+<script>
+  const scene = document.getElementById('scene');
+  const statusEl = document.getElementById('status');
+  const orb = document.getElementById('orb');
+  const display = document.getElementById('display');
+  const startBtn = document.getElementById('startBtn');
+  const lapBtn = document.getElementById('lapBtn');
+  const lapList = document.getElementById('laps');
+
+  // 밤하늘 별
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('i');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 45 + '%';
+    s.style.animationDelay = -Math.random() * 3 + 's';
+    stars.appendChild(s);
+  }
+
+  let running = false;
+  let startTime = 0;   // performance.now() at last start
+  let elapsed = 0;     // ms accumulated before last start
+  let laps = [];       // cumulative times at each lap
+  let rafId = null;
+
+  function now() {
+    return running ? elapsed + (performance.now() - startTime) : elapsed;
+  }
+
+  function format(ms) {
+    const cs = Math.floor(ms / 10) % 100;
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60;
+    const h = Math.floor(ms / 3600000);
+    const pad = n => String(n).padStart(2, '0');
+    const main = (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(s);
+    return { main, cs: '.' + pad(cs), text: main + '.' + pad(cs) };
+  }
+
+  // 1분 주기로 해가 왼쪽에서 오른쪽으로 포물선을 그리며 지나간다
+  function placeOrb(ms) {
+    const p = (ms % 60000) / 60000;
+    orb.style.left = (8 + p * 84) + '%';
+    orb.style.top = (62 - Math.sin(p * Math.PI) * 44) + '%';
+  }
+
+  function render() {
+    const t = now();
+    const f = format(t);
+    display.innerHTML = f.main + '<span class="ms">' + f.cs + '</span>';
+    placeOrb(t);
+    const cur = lapList.firstElementChild;
+    if (cur && cur.dataset.current) {
+      const prev = laps.length ? laps[laps.length - 1] : 0;
+      cur.querySelector('.split').textContent = format(t - prev).text;
+      cur.querySelector('.total').textContent = f.text;
+    }
+    if (running) rafId = requestAnimationFrame(render);
+  }
+
+  function lapRow(n, split, total, current) {
+    const li = document.createElement('li');
+    if (current) li.dataset.current = '1';
+    li.innerHTML = '<span>랩 ' + n + '</span><span class="split">' + format(split).text +
+      '</span><span class="total">' + format(total).text + '</span>';
+    return li;
+  }
+
+  function renderLaps() {
+    lapList.innerHTML = '';
+    const splits = laps.map((t, i) => t - (i ? laps[i - 1] : 0));
+    let best = -1, worst = -1;
+    if (splits.length >= 2) {
+      best = splits.indexOf(Math.min(...splits));
+      worst = splits.indexOf(Math.max(...splits));
+    }
+    if (running || laps.length) {
+      const prev = laps.length ? laps[laps.length - 1] : 0;
+      lapList.appendChild(lapRow(laps.length + 1, now() - prev, now(), true));
+    }
+    for (let i = splits.length - 1; i >= 0; i--) {
+      const li = lapRow(i + 1, splits[i], laps[i], false);
+      if (i === best) li.classList.add('best');
+      if (i === worst) li.classList.add('worst');
+      lapList.appendChild(li);
+    }
+  }
+
+  function updateUI() {
+    startBtn.textContent = running ? '멈춤' : (elapsed ? '계속' : '출발');
+    startBtn.classList.toggle('running', running);
+    lapBtn.textContent = running || elapsed === 0 ? '랩' : '초기화';
+    lapBtn.disabled = !running && elapsed === 0;
+    scene.classList.toggle('running', running);
+    statusEl.textContent = running ? '낙타가 걷는 중' : '낙타가 쉬는 중';
+  }
+
+  function toggle() {
+    if (running) {
+      elapsed = now();
+      running = false;
+      cancelAnimationFrame(rafId);
+    } else {
+      startTime = performance.now();
+      running = true;
+      rafId = requestAnimationFrame(render);
+    }
+    if (!laps.length && !lapList.children.length) renderLaps();
+    updateUI();
+    render();
+  }
+
+  function lap() {
+    if (!running) return;
+    laps.push(now());
+    renderLaps();
+  }
+
+  function reset() {
+    if (running) return;
+    elapsed = 0;
+    laps = [];
+    renderLaps();
+    updateUI();
+    render();
+  }
+
+  startBtn.addEventListener('click', toggle);
+  lapBtn.addEventListener('click', () => running ? lap() : reset());
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'l' || e.key === 'L') lap();
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+
+  placeOrb(0);
+</script>
+</body>
+</html>
